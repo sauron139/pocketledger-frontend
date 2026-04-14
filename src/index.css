@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root, [data-theme="burgundy"] {
+    --pl-primary: #7B1D35;
+    --pl-dark: #5C1528;
+    --pl-light: #FBF0F3;
+    --pl-mid: #A52848;
+    --background: 345 30% 97%;
+    --foreground: 0 0% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+    --border: 345 20% 88%;
+    --input: 345 20% 88%;
+    --ring: 345 63% 29%;
+    --primary: 345 63% 29%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 345 30% 95%;
+    --secondary-foreground: 345 63% 29%;
+    --muted: 345 20% 95%;
+    --muted-foreground: 0 0% 45%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --radius: 0.75rem;
+  }
+  [data-theme="ocean"] {
+    --pl-primary: #1B4F8A; --pl-dark: #133A6B; --pl-light: #EEF4FB; --pl-mid: #2563EB;
+  }
+  [data-theme="forest"] {
+    --pl-primary: #1A5C3A; --pl-dark: #134429; --pl-light: #EEF7F2; --pl-mid: #16A34A;
+  }
+  [data-theme="slate"] {
+    --pl-primary: #2D3748; --pl-dark: #1A202C; --pl-light: #F1F5F9; --pl-mid: #475569;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body { background-color: var(--pl-light); @apply text-foreground; }
+}
