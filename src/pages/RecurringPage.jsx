@@ -28,7 +28,11 @@ function RecurringForm({ onClose }) {
 
   async function onSubmit(data) {
     try {
-      await createRecurring.mutateAsync({ ...data, amount: parseFloat(data.amount) })
+      await createRecurring.mutateAsync({
+        ...data,
+        amount: parseFloat(data.amount),
+        end_date: data.end_date || undefined,
+      })
       toast({ message: 'Recurring transaction created', type: 'success' })
       onClose()
     } catch (e) {
