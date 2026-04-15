@@ -1,43 +1,45 @@
 import { createSlice } from '@reduxjs/toolkit'
 
-const access = localStorage.getItem('access_token')
-const stored = localStorage.getItem('user')
+const stored = (() => {
+  try { return JSON.parse(localStorage.getItem('pl_auth') || 'null') } catch { return null }
+})()
 
 const initialState = {
-  user: stored ? JSON.parse(stored) : null,
-  accessToken: access || null,
-  isAuthenticated: !!access,
+  user: stored?.user || null,
+  accessToken: stored?.accessToken || null,
+  refreshToken: stored?.refreshToken || null,
 }
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    setCredentials(state, { payload }) {
-      state.user = payload.user
-      state.accessToken = payload.access_token
-      state.isAuthenticated = true
-      localStorage.setItem('access_token', payload.access_token)
-      localStorage.setItem('refresh_token', payload.refresh_token)
-      localStorage.setItem('user', JSON.stringify(payload.user))
+    setCredentials(state, action) {
+      const { user, access_token, refresh_token } = action.payload
+      state.user = user
+      state.accessToken = access_token
+      state.refreshToken = refresh_token
+      localStorage.setItem('pl_auth', JSON.stringify({
+        user,
+        accessToken: access_token,
+        refreshToken: refresh_token,
+      }))
+    },
+    updateUser(state, action) {
+      state.user = { ...state.user, ...action.payload }
+      const stored = JSON.parse(localStorage.getItem('pl_auth') || '{}')
+      localStorage.setItem('pl_auth', JSON.stringify({ ...stored, user: state.user }))
     },
     clearCredentials(state) {
       state.user = null
       state.accessToken = null
-      state.isAuthenticated = false
-      localStorage.removeItem('access_token')
-      localStorage.removeItem('refresh_token')
-      localStorage.removeItem('user')
-    },
-    updateUser(state, { payload }) {
-      state.user = { ...state.user, ...payload }
-      localStorage.setItem('user', JSON.stringify(state.user))
+      state.refreshToken = null
+      localStorage.removeItem('pl_auth')
     },
   },
 })
 
-export const { setCredentials, clearCredentials, updateUser } = authSlice.actions
+export const { setCredentials, updateUser, clearCredentials } = authSlice.actions
 export default authSlice.reducer
 
-export const selectCurrentUser = (state) => state.auth.user
-export const selectIsAuthenticated = (state) => state.auth.isAuthenticated
+export const selectCurrentUser = state => state.auth.user
