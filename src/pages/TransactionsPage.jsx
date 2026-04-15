@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { format } from 'date-fns'
-import { Plus, Trash2, X, Search, SlidersHorizontal, ChevronDown } from 'lucide-react'
+import { Plus, Trash2, X, Search, SlidersHorizontal, ChevronDown, Download } from 'lucide-react'
 import { useTransactions, useCreateTransaction, useDeleteTransaction, useCategories } from '@/hooks/queries'
+import { exportsApi } from '@/api'
 import { Skeleton } from '@/components/ui/index'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { useSelector } from 'react-redux'
@@ -100,6 +101,7 @@ export function TransactionsPage() {
   const [searchParams] = useSearchParams()
   const [showForm, setShowForm] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const [activeFilter, setActiveFilter] = useState(searchParams.get('type') || 'all')
   const [selectedCategory, setSelectedCategory] = useState('')
   const [filters, setFilters] = useState({ page: 1, limit: 20, type: searchParams.get('type') || undefined })
@@ -119,6 +121,28 @@ export function TransactionsPage() {
     setSelectedCategory('')
   }
 
+  async function handleExport() {
+    setExporting(true)
+    try {
+      const res = await exportsApi.transactions({
+        type: filters.type,
+        start_date: filters.start_date,
+        end_date: filters.end_date,
+      })
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'text/csv' }))
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `pocketledger-transactions-${format(new Date(), 'yyyy-MM-dd')}.csv`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+      toast({ message: 'Export downloaded', type: 'success' })
+    } catch {
+      toast({ message: 'Export failed', type: 'error' })
+    } finally { setExporting(false) }
+  }
+
   async function handleDelete(id) {
     try { await deleteTx.mutateAsync(id); toast({ message: 'Transaction deleted', type: 'success' }) }
     catch { toast({ message: 'Failed to delete transaction', type: 'error' }) }
@@ -129,6 +153,19 @@ export function TransactionsPage() {
 
   return (
     <div className="px-5 py-4 space-y-5 max-w-4xl mx-auto">
+      <div className="flex items-center justify-between pt-1">
+        <p className="text-xs text-gray-400">{data?.total || 0} total records</p>
+        <button
+          onClick={handleExport}
+          disabled={exporting}
+          className="flex items-center gap-1.5 h-8 px-3 rounded-xl text-xs font-semibold transition-colors disabled:opacity-60"
+          style={{ backgroundColor: 'var(--pl-light)', color: 'var(--pl-primary)' }}
+        >
+          <Download className="h-3.5 w-3.5" />
+          {exporting ? 'Exporting...' : 'Export CSV'}
+        </button>
+      </div>
+
       <div className="relative">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
         <input placeholder="Search transactions, vendors, or categories..." className="w-full h-12 pl-11 pr-4 rounded-2xl bg-white border border-gray-100 text-sm focus:outline-none shadow-sm" />
@@ -186,7 +223,12 @@ export function TransactionsPage() {
                             {tx.category?.name?.charAt(0)}
                           </div>
                           <div>
-                            <p className="text-sm font-semibold text-gray-900">{tx.category?.name}</p>
+                            <div className="flex items-center gap-1.5">
+                              <p className="text-sm font-semibold text-gray-900">{tx.category?.name}</p>
+                              {tx.source === 'recurring' && (
+                                <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full font-medium">Auto</span>
+                              )}
+                            </div>
                             <p className="text-xs text-gray-400">{tx.description || tx.category?.name} · {tx.transaction_date}</p>
                           </div>
                         </div>

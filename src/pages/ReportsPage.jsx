@@ -1,21 +1,21 @@
 import { useState } from 'react'
 import { format, subMonths, startOfMonth, endOfMonth, subDays } from 'date-fns'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
-import { useSummary, useTrend, useCategoryBreakdown } from '@/hooks/queries'
+import { useSummary, useTrend, useCategoryBreakdown, useComparison } from '@/hooks/queries'
 import { Skeleton } from '@/components/ui/index'
 import { formatCurrency } from '@/lib/utils'
 import { useSelector } from 'react-redux'
 import { selectCurrentUser } from '@/features/auth/authSlice'
-import { TrendingUp, PiggyBank, BarChart2 } from 'lucide-react'
+import { TrendingUp, TrendingDown, PiggyBank, BarChart2 } from 'lucide-react'
 import { usePageTitle } from '@/hooks/usePageTitle'
 
 const PRESETS = [
-  { label: 'Daily',    value: 'daily',    group_by: 'day',   days: 7 },
-  { label: 'Monthly',  value: 'monthly',  group_by: 'month', months: 1 },
-  { label: '3 Months', value: '3m',       group_by: 'month', months: 3 },
-  { label: '6 Months', value: '6m',       group_by: 'month', months: 6 },
-  { label: '12 Months',value: '12m',      group_by: 'month', months: 12 },
-  { label: 'Custom',   value: 'custom',   group_by: 'month' },
+  { label: 'Daily',     value: 'daily',   group_by: 'day',   days: 7 },
+  { label: 'Monthly',   value: 'monthly', group_by: 'month', months: 1 },
+  { label: '3 Months',  value: '3m',      group_by: 'month', months: 3 },
+  { label: '6 Months',  value: '6m',      group_by: 'month', months: 6 },
+  { label: '12 Months', value: '12m',     group_by: 'month', months: 12 },
+  { label: 'Custom',    value: 'custom',  group_by: 'month' },
 ]
 
 function getParams(preset, customStart, customEnd) {
@@ -37,6 +37,8 @@ export function ReportsPage() {
   const { data: summary, isLoading: ls } = useSummary(params)
   const { data: trend, isLoading: lt } = useTrend(params)
   const { data: breakdown, isLoading: lb } = useCategoryBreakdown({ ...params, type: 'expense' })
+  const { data: comparison } = useComparison('monthly')
+
   const trendData = trend?.groups?.map(g => ({ name: g.label, Income: parseFloat(g.income), Expenses: parseFloat(g.expense) })) || []
   const pieData = breakdown?.map(b => ({ name: b.category?.name, value: parseFloat(b.total), percentage: b.percentage })) || []
 
@@ -46,6 +48,7 @@ export function ReportsPage() {
         <p className="text-xs tracking-widest text-gray-400 uppercase mb-2">Financial Insights</p>
       </div>
 
+      {/* Presets */}
       <div className="flex gap-2 overflow-x-auto pb-1">
         {PRESETS.map(p => (
           <button key={p.value} onClick={() => setPreset(p)}
@@ -55,6 +58,7 @@ export function ReportsPage() {
         ))}
       </div>
 
+      {/* Custom date range */}
       {preset.value === 'custom' && (
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
@@ -68,6 +72,7 @@ export function ReportsPage() {
         </div>
       )}
 
+      {/* Summary row */}
       <div className="grid grid-cols-3 gap-3">
         {[
           { label: 'Income', value: summary?.total_income || 0, color: 'text-emerald-600' },
@@ -81,12 +86,39 @@ export function ReportsPage() {
         ))}
       </div>
 
+      {/* Net cashflow */}
       <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-50">
         <p className="text-sm font-semibold text-gray-700 mb-3">Net Cashflow</p>
         {ls ? <Skeleton className="h-10 w-48 mb-1" /> : <div className="text-3xl font-bold text-gray-900">{formatCurrency(summary?.net_cashflow || 0, currency)}</div>}
         <p className="text-xs text-gray-400 mt-1">For the selected period</p>
       </div>
 
+      {/* vs Last Month comparison */}
+      {comparison && (
+        <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-50">
+          <p className="text-sm font-semibold text-gray-700 mb-1">vs Last Month</p>
+          <p className="text-xs text-gray-400 mb-4">{comparison.previous_period.start} → {comparison.previous_period.end}</p>
+          <div className="grid grid-cols-3 gap-3">
+            {['income','expense','net'].map(key => {
+              const d = comparison[key]
+              const isPositive = Number(d.absolute) >= 0
+              const pct = d.percentage
+              return (
+                <div key={key} className="rounded-2xl p-3" style={{ backgroundColor: 'var(--pl-light)' }}>
+                  <p className="text-xs text-gray-500 capitalize mb-1">{key}</p>
+                  <p className="text-sm font-bold text-gray-900">{formatCurrency(d.current, currency)}</p>
+                  <div className={`flex items-center gap-0.5 mt-0.5 text-xs font-semibold ${isPositive ? 'text-emerald-600' : 'text-red-500'}`}>
+                    {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                    {pct != null ? `${Math.abs(pct)}%` : 'N/A'}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Category mix */}
       <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-50">
         <p className="text-sm font-semibold text-gray-700 mb-4">Category Mix</p>
         {lb ? <Skeleton className="h-48 w-full" /> : pieData.length === 0
@@ -105,6 +137,7 @@ export function ReportsPage() {
         }
       </div>
 
+      {/* Revenue vs Expenses line chart */}
       <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-50">
         <p className="text-sm font-semibold text-gray-700 mb-4">Revenue vs Expenses</p>
         {lt ? <Skeleton className="h-48 w-full" /> : (
@@ -121,6 +154,7 @@ export function ReportsPage() {
         )}
       </div>
 
+      {/* Projected savings */}
       <div className="rounded-3xl p-5 text-white" style={{ backgroundColor: 'var(--pl-primary)' }}>
         <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center mb-3"><PiggyBank className="h-5 w-5 text-white" /></div>
         <p className="text-xs tracking-widest opacity-60 uppercase mb-1">Projected Savings</p>
@@ -128,6 +162,7 @@ export function ReportsPage() {
         <p className="text-xs opacity-60">Based on current cashflow trajectory</p>
       </div>
 
+      {/* Stat cards */}
       <div className="grid grid-cols-2 gap-4">
         <div className="rounded-3xl p-4 border" style={{ backgroundColor: 'var(--pl-light)', borderColor: 'rgba(0,0,0,0.05)' }}>
           <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center mb-3"><BarChart2 className="h-4 w-4" style={{ color: 'var(--pl-primary)' }} /></div>

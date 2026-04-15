@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
-import { LayoutDashboard, ArrowLeftRight, Target, BarChart2, Settings, LogOut, Wallet, Tag, Menu, X, User } from 'lucide-react'
+import { LayoutDashboard, ArrowLeftRight, Target, BarChart2, Settings, LogOut, Wallet, Tag, Menu, X, User, RefreshCw } from 'lucide-react'
 import { clearCredentials, selectCurrentUser } from '@/features/auth/authSlice'
 import { authApi } from '@/api'
 import { cn } from '@/lib/utils'
 import { applyTheme, getStoredTheme } from '@/lib/themes'
+import { NotificationBell } from '@/components/NotificationBell'
 
 const mobileNav = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -18,6 +19,7 @@ const mobileNav = [
 const desktopNav = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/transactions', icon: ArrowLeftRight, label: 'Transactions' },
+  { to: '/recurring', icon: RefreshCw, label: 'Recurring' },
   { to: '/budgets', icon: Target, label: 'Budgets' },
   { to: '/categories', icon: Tag, label: 'Categories' },
   { to: '/reports', icon: BarChart2, label: 'Reports' },
@@ -50,7 +52,7 @@ export function AppLayout() {
           </div>
           <button onClick={() => setSidebarOpen(false)} className="md:hidden text-white/70 hover:text-white"><X className="h-5 w-5" /></button>
         </div>
-        <nav className="flex-1 px-3 space-y-0.5">
+        <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
           {desktopNav.map(({ to, icon: Icon, label }) => (
             <NavLink key={to} to={to} onClick={() => setSidebarOpen(false)}
               className={({ isActive }) => cn('flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors', isActive ? 'bg-white' : 'text-white/75 hover:bg-white/10 hover:text-white')}
@@ -75,9 +77,12 @@ export function AppLayout() {
         <header className="md:hidden flex items-center justify-between px-5 py-4 sticky top-0 z-10" style={{ backgroundColor: 'var(--pl-light)' }}>
           <button onClick={() => setSidebarOpen(true)} style={{ color: 'var(--pl-primary)' }}><Menu className="h-5 w-5" /></button>
           <span className="font-bold tracking-widest text-sm" style={{ color: 'var(--pl-primary)' }}>POCKETLEDGER</span>
-          <button onClick={() => navigate('/settings')} className="w-9 h-9 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--pl-light)', border: '1.5px solid var(--pl-primary)' }}>
-            <User className="h-4 w-4" style={{ color: 'var(--pl-primary)' }} />
-          </button>
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            <button onClick={() => navigate('/settings')} className="w-9 h-9 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--pl-light)', border: '1.5px solid var(--pl-primary)' }}>
+              <User className="h-4 w-4" style={{ color: 'var(--pl-primary)' }} />
+            </button>
+          </div>
         </header>
         <main className="flex-1 overflow-auto pb-24 md:pb-0"><Outlet /></main>
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-10 px-2 py-2">

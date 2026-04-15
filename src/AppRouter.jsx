@@ -5,6 +5,7 @@ import { LoginPage } from '@/pages/LoginPage'
 import { RegisterPage } from '@/pages/RegisterPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { TransactionsPage } from '@/pages/TransactionsPage'
+import { RecurringPage } from '@/pages/RecurringPage'
 import { BudgetsPage } from '@/pages/BudgetsPage'
 import { ReportsPage } from '@/pages/ReportsPage'
 import { SettingsPage } from '@/pages/SettingsPage'
@@ -27,6 +28,7 @@ export function AppRouter() {
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="transactions" element={<TransactionsPage />} />
+          <Route path="recurring" element={<RecurringPage />} />
           <Route path="budgets" element={<BudgetsPage />} />
           <Route path="categories" element={<CategoriesPage />} />
           <Route path="reports" element={<ReportsPage />} />

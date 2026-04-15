@@ -8,8 +8,13 @@ export default defineConfig({
     alias: { '@': path.resolve(__dirname, './src') },
   },
   server: {
+    port: 5173,
+    host: true, // Needed for Docker to expose the port correctly
     proxy: {
-      '/api': { target: 'http://localhost:8000', changeOrigin: true },
+      '/api': { 
+        target: 'http://api:8000', // Points to the backend container service name
+        changeOrigin: true 
+      },
     },
   },
 })
